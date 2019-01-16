@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/Acache.iml" filepath="$PROJECT_DIR$/Acache.iml" />
+      <module fileurl="file://$PROJECT_DIR$/acache/acache.iml" filepath="$PROJECT_DIR$/acache/acache.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>
