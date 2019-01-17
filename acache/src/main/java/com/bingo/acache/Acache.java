@@ -26,7 +26,7 @@ import java.util.TreeMap;
  */
 
 public class Acache {
-    private static final String KEY_CACHE = "key_cache";
+    private static final String KEY_CACHE = "sp_cache_key";
     private SharedPreferences sharedPreferences;
 
     private Acache() {
@@ -69,12 +69,30 @@ public class Acache {
     }
 
     /**
+     * 检查是否初始化过了
+     *
+     * @return boolean
+     */
+    private boolean checkInit() {
+        return sharedPreferences != null;
+    }
+
+    /**
+     * 处理未初始化的异常
+     */
+    private void handleException() {
+        if (!checkInit()) {
+            throw new IllegalArgumentException("Acache must init first!");
+        }
+    }
+
+    /**
      * 获取所有缓存数据
      *
      * @return String
      */
-    public String getCache() {
-        if (sharedPreferences == null) return null;
+    public String getAllCache() {
+        handleException();
         return sharedPreferences.getString(KEY_CACHE, "");
     }
 
@@ -85,11 +103,9 @@ public class Acache {
      * @return
      */
     public Object getCache(String key) {
-        if (check()) {
-            Map cacheMap = getCacheMap(getCache());
-            return cacheMap.get(key);
-        }
-        return null;
+        handleException();
+        Map cacheMap = getCacheMap(getAllCache());
+        return cacheMap.get(key);
     }
 
     /**
@@ -99,11 +115,10 @@ public class Acache {
      * @return
      */
     public <T> T getObject(String key, Type typeOfT) {
-        if (check()) {
-            Map cacheMap = getCacheMap(getCache());
-            if (cacheMap.get(key) != null) {
-                return (T) mGson.fromJson(cacheMap.get(key).toString(), typeOfT);
-            }
+        handleException();
+        Map cacheMap = getCacheMap(getAllCache());
+        if (cacheMap.get(key) != null) {
+            return (T) mGson.fromJson(cacheMap.get(key).toString(), typeOfT);
         }
         return null;
     }
@@ -115,11 +130,10 @@ public class Acache {
      * @return
      */
     public Boolean getBoolean(String key) {
-        if (check()) {
-            Map cacheMap = getCacheMap(getCache());
-            if (cacheMap.get(key) != null) {
-                return Boolean.parseBoolean(cacheMap.get(key).toString());
-            }
+        handleException();
+        Map cacheMap = getCacheMap(getAllCache());
+        if (cacheMap.get(key) != null) {
+            return Boolean.parseBoolean(cacheMap.get(key).toString());
         }
         return null;
     }
@@ -128,16 +142,45 @@ public class Acache {
      * 获取值
      *
      * @param key
-     * @return
+     * @return int
      */
     public Integer getInt(String key) {
-        if (check()) {
-            Map cacheMap = getCacheMap(getCache());
-            if (cacheMap.get(key) != null) {
-                return Integer.parseInt(cacheMap.get(key).toString());
-            }
+        handleException();
+        Map cacheMap = getCacheMap(getAllCache());
+        if (cacheMap.get(key) != null) {
+            return Integer.parseInt(cacheMap.get(key).toString());
         }
-        return null;
+        return -1;
+    }
+
+    /**
+     * 获取值
+     *
+     * @param key
+     * @return
+     */
+    public float getFloat(String key) {
+        handleException();
+        Map cacheMap = getCacheMap(getAllCache());
+        if (cacheMap.get(key) != null) {
+            return Float.parseFloat(cacheMap.get(key).toString());
+        }
+        return -1;
+    }
+
+    /**
+     * 获取值
+     *
+     * @param key
+     * @return
+     */
+    public double getDouble(String key) {
+        handleException();
+        Map cacheMap = getCacheMap(getAllCache());
+        if (cacheMap.get(key) != null) {
+            return Double.parseDouble(cacheMap.get(key).toString());
+        }
+        return -1;
     }
 
     /**
@@ -147,13 +190,12 @@ public class Acache {
      * @return
      */
     public Long getLong(String key) {
-        if (check()) {
-            Map cacheMap = getCacheMap(getCache());
-            if (cacheMap.get(key) != null) {
-                return Long.parseLong(cacheMap.get(key).toString());
-            }
+        handleException();
+        Map cacheMap = getCacheMap(getAllCache());
+        if (cacheMap.get(key) != null) {
+            return Long.parseLong(cacheMap.get(key).toString());
         }
-        return null;
+        return -1L;
     }
 
     /**
@@ -163,13 +205,12 @@ public class Acache {
      * @return
      */
     public String getString(String key) {
-        if (check()) {
-            Map cacheMap = getCacheMap(getCache());
-            if (cacheMap.get(key) != null) {
-                return cacheMap.get(key).toString();
-            }
+        handleException();
+        Map cacheMap = getCacheMap(getAllCache());
+        if (cacheMap.get(key) != null) {
+            return String.valueOf(cacheMap.get(key)).replace("\"", "");
         }
-        return null;
+        return "";
     }
 
     /**
@@ -178,7 +219,10 @@ public class Acache {
      * @param map
      */
     public void setCache(Map<String, Object> map) {
-        if (map == null || sharedPreferences == null) return;
+        handleException();
+        if (map == null) {
+            throw new IllegalArgumentException("setCache() 参数不可为null! ");
+        }
         Map cacheMap = getCacheMap();
         Map<String, Object> temp = new HashMap<>();
         if (cacheMap != null) {
@@ -201,10 +245,14 @@ public class Acache {
 
     /**
      * 设置缓存
+     *
+     * @param key
+     * @param value
      */
     public void setCache(String key, Object value) {
-        if (check()) {
-            Map cacheMap = getCacheMap(getCache());
+        handleException();
+        if (checkCache()) {
+            Map cacheMap = getCacheMap(getAllCache());
             cacheMap.put(key, value);
             setCache(cacheMap);
         } else {
@@ -218,12 +266,13 @@ public class Acache {
      * 判断是否存在键
      *
      * @param key
-     * @return
+     * @return boolean
      */
-    public boolean isExist(String key) {
+    public boolean containsKey(String key) {
+        handleException();
         if (TextUtils.isEmpty(key)) return false;
-        if (check()) {
-            Map cacheMap = getCacheMap(getCache());
+        if (checkCache()) {
+            Map cacheMap = getCacheMap(getAllCache());
             return cacheMap.containsKey(key);
         }
         return false;
@@ -232,10 +281,9 @@ public class Acache {
     /**
      * 是否存在缓存
      *
-     * @return
+     * @return boolean
      */
-    private boolean check() {
-        if (sharedPreferences == null) return false;
+    private boolean checkCache() {
         String cache = sharedPreferences.getString(KEY_CACHE, "");
         return !TextUtils.isEmpty(cache);
     }
@@ -244,7 +292,7 @@ public class Acache {
      * 将缓存字符串转换成map
      *
      * @param json
-     * @return
+     * @return map
      */
     private Map getCacheMap(String json) {
         //return mGson.fromJson(json, Map.class);
@@ -258,7 +306,7 @@ public class Acache {
      * @return
      */
     private Map getCacheMap() {
-        String cache = getCache();
+        String cache = getAllCache();
         if (TextUtils.isEmpty(cache)) return null;
         //return mGson.fromJson(cache, Map.class);
         return mGson.fromJson(cache, new TypeToken<TreeMap<String, Object>>() {
@@ -269,7 +317,7 @@ public class Acache {
      * 清除
      */
     public void clear() {
-        if (sharedPreferences == null) return;
+        handleException();
         sharedPreferences.edit().clear().commit();
     }
 
@@ -279,8 +327,9 @@ public class Acache {
      * @param key
      */
     public void remove(String key) {
-        if (check()) {
-            Map cacheMap = getCacheMap(getCache());
+        handleException();
+        if (checkCache()) {
+            Map cacheMap = getCacheMap(getAllCache());
             if (cacheMap != null || !cacheMap.isEmpty()) {
                 if (cacheMap.containsKey(key)) {
                     cacheMap.remove(key);
